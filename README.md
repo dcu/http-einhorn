@@ -36,6 +36,28 @@ then run the tests as you would normally:
 
     go test .
 
+
+Integrating with Graceful
+
+Graceful is a package enabling graceful shutdown of http.Handler servers.
+Integration with graceful is easy, first create an instance of the graceful
+server:
+
+    gracefulServer := &graceful.Server{
+        Server: http.Server{Handler: gin.Default()},
+    }
+
+then run it with einhorn:
+
+    einhorn.Run(gracefulServer, 0)
+
+also, you'll need to set the `OnStopCallback` to close the server:
+
+    einhorn.OnStopCallback = func(server einhorn.Server, listener net.Listener) {
+        gracefulServer := server.(*graceful.Server)
+        gracefulServer.Stop(5 * time.Second)
+    }
+
 ## Usage
 
 ```go
@@ -45,7 +67,7 @@ var (
 
 	// OnStopCallback is an optional callback that's called before closing the server.
 	// Use it to cleanup everything before the server is stopped.
-	OnStopCallback func(server *http.Server, listener net.Listener)
+	OnStopCallback func(server Server, listener net.Listener)
 )
 ```
 
@@ -59,7 +81,7 @@ IsRunning returns true if einrhorn is running this process.
 #### func  Run
 
 ```go
-func Run(httpServer *http.Server, einhornListenerFd int) error
+func Run(httpServer Server, einhornListenerFd int) error
 ```
 Run runs the given http server on the given `einhornListenerFd` The listener FD
 is related to the einhorn's `-b` option so if you only pass one address the
@@ -73,3 +95,15 @@ func Start(handler http.Handler, einhornListenerFd int) error
 Start starts the http handler on the given `einhornListenerFd`. The listener FD
 is related to the einhorn's `-b` option so if you only pass one address the
 einhornListenerFd should be 0.
+
+#### type Server
+
+```go
+type Server interface {
+	Serve(listener net.Listener) error
+}
+```
+
+Server is a interface that requires to implement the Serve method. This
+interface is compatible with http.Server and you can use it to make this package
+compatible with other servers.
