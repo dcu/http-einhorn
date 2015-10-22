@@ -2,16 +2,18 @@
 // It's helpful to run zero-downtime deployments.
 //
 // For example to run `gin` with einhorn you can do the following:
-//     r := gin.Default()
+//     mux := http.NewServeMux()
+//     mux.HandleFunc("/", httpHandler)
 //     ...
 //     if einhorn.IsRunning() {
-//         einhorn.Start(r, 0)
+//         einhorn.Start(mux, 0)
 //     } else {
-//         r.Run(":8000")
+//         server := &http.Server{Handler: mux, Addr: ":4000"}
+//         server.ListenAndServe()
 //     }
 // and then
-//     go build your-gin-app.go
-//     einhorn -b 0.0.0.0:4000 -- ./your-gin-app
+//     go build your-app.go
+//     einhorn -b 0.0.0.0:4000 -- ./your-app
 // please note you have to build the application otherwise the restart signal is not handled.
 // Now try restarting the cluster with:
 //     einhornsh -e "upgrade"
@@ -28,7 +30,7 @@
 // Graceful is a package enabling graceful shutdown of http.Handler servers.
 // Integration with graceful is easy, first create an instance of the graceful server:
 //     gracefulServer := &graceful.Server{
-//         Server: http.Server{Handler: gin.Default()},
+//         Server: http.Server{Handler: mux},
 //     }
 // then run it with einhorn:
 //     einhorn.Run(gracefulServer, 0)

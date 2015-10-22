@@ -5,20 +5,24 @@
 Package einhorn contains a series of helpers to run a http server on stripe's
 einhorn. It's helpful to run zero-downtime deployments.
 
-For example to run `gin` with einhorn you can do the following:
+For example to run a web app with einhorn you can do the following:
 
-    r := gin.Default()
-    ...
-    if einhorn.IsRunning() {
-        einhorn.Start(r, 0)
-    } else {
-        r.Run(":8000")
-    }
+```go
+mux := http.NewServeMux()
+mux.HandleFunc("/", httpHandler)
+...
+if einhorn.IsRunning() {
+    einhorn.Start(mux, 0)
+} else {
+    server := &http.Server{Handler: mux, Addr: ":4000"}
+     server.ListenAndServe()
+}
+```
 
 and then
 
-    go build your-gin-app.go
-    einhorn -b 0.0.0.0:4000 -- ./your-gin-app
+    go build your-app.go
+    einhorn -b 0.0.0.0:4000 -- ./your-app
 
 please note you have to build the application otherwise the restart signal is
 not handled. Now try restarting the cluster with:
@@ -44,7 +48,7 @@ Integration with graceful is easy, first create an instance of the graceful
 server:
 
     gracefulServer := &graceful.Server{
-        Server: http.Server{Handler: gin.Default()},
+        Server: http.Server{Handler: mux},
     }
 
 then run it with einhorn:
